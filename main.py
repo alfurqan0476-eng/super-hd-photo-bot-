@@ -1,3 +1,4 @@
+এই নিন কোডটি। এটি সংরক্ষণ করে রাখতে পারেন।
 import os
 import time
 import urllib.parse
@@ -7,9 +8,6 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import google.generativeai as genai
 
-# ----------------------------------------------------
-# Render Port Binding
-# ----------------------------------------------------
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -23,11 +21,12 @@ def run_health_check_server():
 
 threading.Thread(target=run_health_check_server, daemon=True).start()
 
-# ----------------------------------------------------
-# ১. কনফিগারেশন (নতুন টোকেন সরাসরি যুক্ত করা হলো)
-# ----------------------------------------------------
-BOT_TOKEN = "8833020885:AAGYVPU7VepcGsrfC-m6xelTafeIvxrdYHM"
+# এনভায়রনমেন্ট ভ্যারিয়েবল থেকে টোকেন নেওয়া হচ্ছে
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+if not BOT_TOKEN:
+    raise ValueError("⚠️ BOT_TOKEN এনভায়রনমেন্ট ভ্যারিয়েবল পাওয়া যায়নি!")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -41,9 +40,6 @@ def is_safe_prompt(prompt_text):
     text = prompt_text.lower()
     return not any(word in text for word in BAD_WORDS)
 
-# ----------------------------------------------------
-# স্থায়ী মেনু কিবোর্ড (সবসময় নিচে ফিক্সড থাকবে)
-# ----------------------------------------------------
 def get_main_keyboard():
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     btn1 = KeyboardButton("🤖 AI Chat")
@@ -53,9 +49,6 @@ def get_main_keyboard():
     markup.add(btn1, btn2, btn3, btn4)
     return markup
 
-# ----------------------------------------------------
-# ২. /start কমান্ড
-# ----------------------------------------------------
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     welcome_text = (
@@ -65,9 +58,6 @@ def send_welcome(message):
     )
     bot.send_message(message.chat.id, welcome_text, parse_mode="Markdown", reply_markup=get_main_keyboard())
 
-# ----------------------------------------------------
-# ৩. ছবি অ্যানালাইসিস
-# ----------------------------------------------------
 @bot.message_handler(content_types=['photo'])
 def handle_user_photo(message):
     status_msg = bot.reply_to(message, "⚙️ 16K রেজোলিউশন ও Medium Format প্রফেশনাল ফটোগ্রাফি মানদণ্ডে প্রসেস করা হচ্ছে...", reply_markup=get_main_keyboard())
@@ -99,9 +89,6 @@ def handle_user_photo(message):
         if os.path.exists(image_path):
             os.remove(image_path)
 
-# ----------------------------------------------------
-# ৪. বাটন ক্লিক এবং চ্যাটিং হ্যান্ডলার
-# ----------------------------------------------------
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
     user_text = message.text
@@ -110,7 +97,6 @@ def handle_all_messages(message):
         bot.reply_to(message, "⚠️ **দুঃখিত!** অনৈতিক বিষয় সম্পূর্ণ নিষিদ্ধ।", reply_markup=get_main_keyboard())
         return
 
-    # মেনু বাটনের কমান্ড হ্যান্ডলিং
     if user_text == "🤖 AI Chat":
         bot.reply_to(message, "💬 **AI চ্যাট সক্রিয়!** যা খুশি লিখে পাঠান, আমি উত্তর দিচ্ছি।", reply_markup=get_main_keyboard())
         return
@@ -158,18 +144,16 @@ def handle_all_messages(message):
             bot.send_chat_action(message.chat.id, 'typing')
             if GEMINI_API_KEY:
                 response = model.generate_content(f"ইউজারের সাথে অমায়িক প্রফেশনাল বাংলায় কথা বলো: {user_text}")
-                bot.reply_to(message, response.text, reply_markup=get_main_keyword())
+                bot.reply_to(message, response.text, reply_markup=get_main_keyboard())
             else:
                 bot.reply_to(message, "আপনার বার্তাটি পেয়েছি!", reply_markup=get_main_keyboard())
         except Exception as e:
             bot.reply_to(message, "বলুন, আপনাকে কীভাবে সাহায্য করতে পারি?", reply_markup=get_main_keyboard())
 
-# ----------------------------------------------------
-# ৫. পলিস লুপ
-# ----------------------------------------------------
 print("16K DSLR Bot is Active...")
 while True:
     try:
         bot.infinity_polling(timeout=10, long_polling_timeout=5)
     except Exception as e:
         time.sleep(3)
+
