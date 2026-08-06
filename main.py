@@ -1,4 +1,3 @@
-এই নিন কোডটি। এটি সংরক্ষণ করে রাখতে পারেন।
 import os
 import time
 import urllib.parse
@@ -156,4 +155,3 @@ while True:
         bot.infinity_polling(timeout=10, long_polling_timeout=5)
     except Exception as e:
         time.sleep(3)
-
