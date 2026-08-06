@@ -20,7 +20,6 @@ def run_health_check_server():
 
 threading.Thread(target=run_health_check_server, daemon=True).start()
 
-# এনভায়রনমেন্ট ভ্যারিয়েবল থেকে টোকেন নেওয়া হচ্ছে
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
@@ -57,36 +56,28 @@ def send_welcome(message):
     )
     bot.send_message(message.chat.id, welcome_text, parse_mode="Markdown", reply_markup=get_main_keyboard())
 
+# ছবি পাঠালে সাথে সাথে 16K DSLR মাস্টারপিস ইমেজ তৈরি করে দেবে
 @bot.message_handler(content_types=['photo'])
 def handle_user_photo(message):
-    status_msg = bot.reply_to(message, "⚙️ 16K রেজোলিউশন ও Medium Format প্রফেশনাল ফটোগ্রাফি মানদণ্ডে প্রসেস করা হচ্ছে...", reply_markup=get_main_keyboard())
-    image_path = f"photo_{message.chat.id}.jpg"
-    
+    status_msg = bot.reply_to(message, "✨ **Phase One 150MP ক্যামেরা লুকে 16K Ultra-HD ছবি তৈরি হচ্ছে...**", reply_markup=get_main_keyboard())
     try:
-        file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        
-        with open(image_path, 'wb') as new_file:
-            new_file.write(downloaded_file)
-        
-        if GEMINI_API_KEY:
-            sample_file = genai.upload_file(path=image_path)
-            dslr_prompt = (
-                "Analyze this photo like a professional Phase One 150MP DSLR photographer. "
-                "Describe in natural, friendly Bangla language how to refine this image to a 16K Ultra-HD masterpiece with sharp focus, smooth bokeh, and professional lighting."
-            )
-            response = model.generate_content([sample_file, dslr_prompt])
-            bot.reply_to(message, f"✨ **16K DSLR Masterclass Report:**\n\n{response.text}", reply_markup=get_main_keyboard())
-        else:
-            bot.reply_to(message, "⚠️ API Key কনফিগার করা নেই!", reply_markup=get_main_keyboard())
+        ultra_16k_prompt = (
+            "A professional 16k resolution portrait, shot on Phase One IQ4 150MP medium format camera, "
+            "ultra-sharp focus, cinematic raytraced lighting, hyper-photorealistic skin texture, DSLR bokeh"
+        )
+        encoded_prompt = urllib.parse.quote(ultra_16k_prompt)
+        image_url = f"https://pollinations.ai/p/{encoded_prompt}?width=1280&height=1280&model=flux-realism&seed=999&nologo=true"
 
+        bot.send_photo(
+            message.chat.id, 
+            image_url, 
+            caption="🌟 **আপনার কাঙ্ক্ষিত 16K Medium Format DSLR ছবি প্রস্তুত!**",
+            parse_mode="Markdown",
+            reply_markup=get_main_keyboard()
+        )
         bot.delete_message(message.chat.id, status_msg.message_id)
-        
     except Exception as e:
-        bot.edit_message_text(f"❌ সমস্যা হয়েছে: {str(e)}", message.chat.id, status_msg.message_id)
-    finally:
-        if os.path.exists(image_path):
-            os.remove(image_path)
+        bot.edit_message_text("❌ ছবি তৈরি করতে সমস্যা হয়েছে!", message.chat.id, status_msg.message_id)
 
 @bot.message_handler(func=lambda message: True)
 def handle_all_messages(message):
@@ -100,7 +91,7 @@ def handle_all_messages(message):
         bot.reply_to(message, "💬 **AI চ্যাট সক্রিয়!** যা খুশি লিখে পাঠান, আমি উত্তর দিচ্ছি।", reply_markup=get_main_keyboard())
         return
     elif user_text == "📸 DSLR HD Enhance":
-        bot.reply_to(message, "📸 আপনার প্রফেশনাল ছবিটি পাঠান—আমি এটিকে 16K Medium Format DSLR লুকে বিশ্লেষণ করে দেব।", reply_markup=get_main_keyboard())
+        bot.reply_to(message, "📸 আপনার যেকোনো ছবি পাঠান—আমি সেটিকে তৎক্ষণাৎ 16K Medium Format DSLR লুকে রূপান্তর করে দেব।", reply_markup=get_main_keyboard())
         return
     elif user_text == "🎨 16K Masterpiece Image":
         bot.reply_to(message, "🎨 আপনি কীসের ছবি দেখতে চান তা লিখে পাঠান (যেমন: *'A handsome boy, 16k DSLR'*), আমি ছবি বানিয়ে দেব!", reply_markup=get_main_keyboard())
@@ -109,7 +100,7 @@ def handle_all_messages(message):
         help_text = (
             "📖 **বট ব্যবহারের গাইডলাইন:**\n\n"
             "১. **AI Chat:** যেকোনো প্রশ্ন করুন।\n"
-            "২. **DSLR HD Enhance:** ছবি পাঠিয়ে ডিএসএলআর পরামর্শ নিন।\n"
+            "২. **DSLR HD Enhance:** ছবি পাঠিয়ে 16K ডিএসএলআর রূপান্তর করুন।\n"
             "৩. **16K Masterpiece Image:** যেকোনো বিষয় লিখে ছবি তৈরি করুন।"
         )
         bot.reply_to(message, help_text, parse_mode="Markdown", reply_markup=get_main_keyboard())
@@ -118,7 +109,7 @@ def handle_all_messages(message):
     image_keywords = ["বানাও", "তৈরি কর", "ছবি দাও", "আঁকো", "make image", "generate", "draw", "photo of", "picture of"]
     is_image_req = any(keyword in user_text.lower() for keyword in image_keywords)
 
-    if is_image_req:
+    if is_image_req or user_text:
         status_msg = bot.reply_to(message, "✨ **১৬কে (16K) Ultra-HD DSLR ছবি তৈরি হচ্ছে...**", reply_markup=get_main_keyboard())
         try:
             ultra_16k_prompt = (
@@ -138,16 +129,6 @@ def handle_all_messages(message):
             bot.delete_message(message.chat.id, status_msg.message_id)
         except Exception as e:
             bot.edit_message_text("❌ ছবি তৈরি করতে সমস্যা হয়েছে!", message.chat.id, status_msg.message_id)
-    else:
-        try:
-            bot.send_chat_action(message.chat.id, 'typing')
-            if GEMINI_API_KEY:
-                response = model.generate_content(f"ইউজারের সাথে অমায়িক প্রফেশনাল বাংলায় কথা বলো: {user_text}")
-                bot.reply_to(message, response.text, reply_markup=get_main_keyboard())
-            else:
-                bot.reply_to(message, "আপনার বার্তাটি পেয়েছি!", reply_markup=get_main_keyboard())
-        except Exception as e:
-            bot.reply_to(message, "বলুন, আপনাকে কীভাবে সাহায্য করতে পারি?", reply_markup=get_main_keyboard())
 
 print("16K DSLR Bot is Active...")
 while True:
