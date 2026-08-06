@@ -24,9 +24,9 @@ def run_health_check_server():
 threading.Thread(target=run_health_check_server, daemon=True).start()
 
 # ----------------------------------------------------
-# ১. কনফিগারেশন
+# ১. কনফিগারেশন (নতুন টোকেন সরাসরি যুক্ত করা হলো)
 # ----------------------------------------------------
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = "8833020885:AAGYVPU7VepcGsrfC-m6xelTafeIvxrdYHM"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -158,7 +158,7 @@ def handle_all_messages(message):
             bot.send_chat_action(message.chat.id, 'typing')
             if GEMINI_API_KEY:
                 response = model.generate_content(f"ইউজারের সাথে অমায়িক প্রফেশনাল বাংলায় কথা বলো: {user_text}")
-                bot.reply_to(message, response.text, reply_markup=get_main_keyboard())
+                bot.reply_to(message, response.text, reply_markup=get_main_keyword())
             else:
                 bot.reply_to(message, "আপনার বার্তাটি পেয়েছি!", reply_markup=get_main_keyboard())
         except Exception as e:
